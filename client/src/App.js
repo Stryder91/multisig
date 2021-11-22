@@ -17,6 +17,8 @@ class App extends Component {
       }
       // Use web3 to get the user's accounts.
       const accounts = await Web3.eth.getAccounts();
+
+      // Il n'y a qu'un seul compte dans accounts ...
       console.log("COUCOU LTR", accounts);
 
       // Get the contract instance.
@@ -28,8 +30,6 @@ class App extends Component {
         MultiSigWallet.abi,
         deployedNetwork && deployedNetwork.address,
       );
-
-      console.log("All accounts", Web3.eth.getAccounts());
 
       // Set web3, accounts, and contract to the state, and then proceed with an
       // example of interacting with the contract's methods.
