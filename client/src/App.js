@@ -11,27 +11,29 @@ class App extends Component {
   componentDidMount = async () => {
     try {
       // Get network provider and web3 instance.
-      const web3 = await getWeb3();
-
+      // const web3 = await getWeb3();
+      if (window.ethereum) {
+        await window.ethereum.enable();
+      }
       // Use web3 to get the user's accounts.
-      const accounts = await web3.eth.getAccounts();
+      const accounts = await Web3.eth.getAccounts();
       console.log("COUCOU LTR", accounts);
-      
+
       // Get the contract instance.
-      const networkId = await web3.eth.net.getId();
+      const networkId = await Web3.eth.net.getId();
 
       const deployedNetwork = MultiSigWallet.networks[networkId];
       console.log("Network ID", deployedNetwork)
-      const instance = new web3.eth.Contract(
+      const instance = new Web3.eth.Contract(
         MultiSigWallet.abi,
         deployedNetwork && deployedNetwork.address,
       );
 
-      console.log("All accounts", web3.eth.getAccounts());
+      console.log("All accounts", Web3.eth.getAccounts());
 
       // Set web3, accounts, and contract to the state, and then proceed with an
       // example of interacting with the contract's methods.
-      this.setState({ web3, accounts, contract: instance }, this.runExample);
+      this.setState({ accounts, contract: instance }, this.runExample);
     } catch (error) {
       // Catch any errors for any of the above operations.
       alert(
@@ -101,6 +103,7 @@ class App extends Component {
         <h2>Smart Contract Example</h2>
         <button onClick={this.submitTransaction}>Submit transaction</button>
         <button onClick={this.confirmTransaction}>Confirm transaction</button>
+        <button onClick={this.executeTransaction}>Execute transaction</button>
         <div>The stored value is: {this.state.storageValue}</div>
       </div>
     );
