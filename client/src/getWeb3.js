@@ -1,38 +1,77 @@
-import Web3 from "web3";
+import Web3 from 'web3';
 
-const getWeb3 = () =>
-  new Promise((resolve, reject) => {
-    // Wait for loading completion to avoid race conditions with web3 injection timing.
-    window.addEventListener("load", async () => {
-      // Modern dapp browsers...
-      if (window.ethereum) {
-        const web3 = new Web3(window.ethereum);
-        try {
-          // Request account access if needed
-          await window.ethereum.enable();
-          // Accounts now exposed
-          resolve(web3);
-        } catch (error) {
-          reject(error);
-        }
-      }
-      // Legacy dapp browsers...
-      else if (window.web3) {
-        // Use Mist/MetaMask's provider.
-        const web3 = window.web3;
-        console.log("Injected web3 detected.");
-        resolve(web3);
-      }
-      // Fallback to localhost; use dev console port by default...
-      else {
-        const provider = new Web3.providers.HttpProvider(
-          "http://127.0.0.1:8545"
-        );
-        const web3 = new Web3(provider);
-        console.log("No web3 instance injected, using Local web3.");
-        resolve(web3);
-      }
-    });
-  });
+import MultiSigWalletContractBuild from './contracts/MultiSigWallet.json';
 
-export default getWeb3;
+let selectedAccount,
+    MultiSigWalletContract;
+
+let isInitialized = false;
+
+export const init = async () => {
+    // check if metamas is install
+    let provider = window.ethereum;
+
+    if(typeof provider !== 'undefined') {
+      // Metamask is install
+      provider.request({ method: 'eth_requestAccounts' }).then(accounts => {
+        selectedAccount = accounts[0];
+      }).catch(err => {
+        console.log(err);
+      });
+
+      window.ethereum.on('accountsChanged', function (accounts) {
+          selectedAccount = accounts[0];
+      });
+    }
+
+    const web3 = new Web3(provider);
+    const networkId = await web3.eth.net.getId();
+
+    // Define the smart contract
+    MultiSigWalletContract = new web3.eth.Contract(
+        MultiSigWalletContractBuild.abi, 
+        MultiSigWalletContractBuild.networks[networkId].address
+    );
+
+    isInitialized = true;
+};
+
+export const submitTransaction = async (_to, _value, _data) => {
+  if(!isInitialized) {
+      await init();
+  }
+
+  return await MultiSigWalletContract.methods
+      .submitTransaction(_to, _value, _data)
+      .send({ from: selectedAccount });
+};
+
+export const confirmTransaction = async (_txIndex) => {
+  if(!isInitialized) {
+      await init();
+  }
+
+  return await MultiSigWalletContract.methods
+      .confirmTransaction(_txIndex)
+      .send({ from: selectedAccount });
+};
+
+export const executeTransaction = async (_txIndex) => {
+  if(!isInitialized) {
+      await init();
+  }
+
+  return await MultiSigWalletContract.methods
+      .executeTransaction(_txIndex)
+      .send({ from: selectedAccount });
+};
+
+export const revokeConfirmation = async (_txIndex) => {
+  if(!isInitialized) {
+      await init();
+  }
+
+  return await MultiSigWalletContract.methods
+      .revokeConfirmation(_txIndex)
+      .send({ from: selectedAccount });
+};
